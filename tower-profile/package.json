@@ -1,0 +1,16 @@
+{
+    "name": "tower-profile",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Tiny web app that renders an ETOH tower profile image from TowerStats data.",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js",
+        "test": "node --test"
+    },
+    "engines": { "node": ">=18" },
+    "dependencies": {
+        "@napi-rs/canvas": "^0.1.65",
+        "color": "^4.2.3"
+    }
+}

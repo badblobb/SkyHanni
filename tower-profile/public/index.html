@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tower Profile</title>
+<style>
+  :root { --bg:#1c1c1f; --card:#2e2e2e; --text:#f1f1f1; --muted:#a8a8a8; --accent:#986cba; --err:#ff7e7e; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+         font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         display:flex; flex-direction:column; align-items:center; padding:48px 16px; }
+  h1 { margin:0 0 4px; font-size:28px; }
+  p.sub { margin:0 0 24px; color:var(--muted); text-align:center; }
+  form { display:flex; gap:8px; width:100%; max-width:460px; }
+  input { flex:1; min-width:0; padding:12px 14px; border-radius:10px; border:1px solid #444; background:var(--card); color:var(--text); font-size:16px; }
+  input:focus { outline:2px solid var(--accent); border-color:transparent; }
+  button { padding:12px 18px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:16px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .hint { color:var(--muted); font-size:13px; margin-top:8px; }
+  #out { margin-top:28px; width:100%; max-width:700px; text-align:center; }
+  #out img { width:100%; height:auto; border-radius:20px; display:block; }
+  #status { min-height:1.5em; color:var(--muted); }
+  #status.err { color:var(--err); }
+  #dl { display:none; margin-top:14px; color:var(--accent); font-weight:600; text-decoration:none; }
+  footer { margin-top:auto; padding-top:40px; color:var(--muted); font-size:13px; }
+  footer a { color:var(--muted); }
+</style>
+</head>
+<body>
+  <h1>Tower Profile</h1>
+  <p class="sub">Enter a Roblox username to generate an Eternal Towers of Hell profile.</p>
+  <form id="f">
+    <input id="u" name="user" placeholder="Roblox username" autocomplete="off" autofocus required maxlength="21">
+    <button id="go">Generate</button>
+  </form>
+  <div class="hint">Tip: prefix a user id with “!”, e.g. <code>!124</code></div>
+  <div id="out">
+    <div id="status" role="status"></div>
+    <img id="img" alt="" hidden>
+    <a id="dl" download="tower-profile.png">Download image</a>
+  </div>
+  <footer>Stats by <a href="https://towerstats.com" target="_blank" rel="noopener">TowerStats.com</a></footer>
+<script>
+  const f = document.getElementById('f'), u = document.getElementById('u'), go = document.getElementById('go');
+  const img = document.getElementById('img'), st = document.getElementById('status'), dl = document.getElementById('dl');
+  let objUrl;
+  async function load(name) {
+    go.disabled = true; st.className = ''; st.textContent = 'Loading…'; dl.style.display = 'none';
+    try {
+      const r = await fetch('/api/profile?user=' + encodeURIComponent(name));
+      if (r.headers.get('content-type')?.startsWith('image/')) {
+        const blob = await r.blob();
+        if (objUrl) URL.revokeObjectURL(objUrl);
+        objUrl = URL.createObjectURL(blob);
+        img.src = objUrl; img.hidden = false; img.alt = 'Tower profile for ' + name;
+        st.textContent = '';
+        if (r.ok) { dl.href = objUrl; dl.download = 'tower-profile-' + name.replace(/[^\w!-]/g, '') + '.png'; dl.style.display = 'inline-block'; }
+        else { st.className = 'err'; st.textContent = r.status === 404 ? 'User not found.' : 'Could not load stats. Try again in a minute.'; }
+      } else {
+        img.hidden = true; st.className = 'err'; st.textContent = (await r.text()) || 'Something went wrong.';
+      }
+    } catch { img.hidden = true; st.className = 'err'; st.textContent = 'Network error.'; }
+    go.disabled = false;
+    history.replaceState(null, '', '?user=' + encodeURIComponent(name));
+  }
+  f.addEventListener('submit', (e) => { e.preventDefault(); const n = u.value.trim(); if (n) load(n); });
+  const q = new URLSearchParams(location.search).get('user');
+  if (q) { u.value = q; load(q); }
+</script>
+</body>
+</html>
